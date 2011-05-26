@@ -34,7 +34,7 @@ protected slots:
 		img = QImage(filename);
 		
 		if (!img.isNull()) {
-			QGraphicsPixmapItem* pi = scene->addPixmap(QPixmap::fromImage(img).scaledToWidth(500));
+                        QGraphicsPixmapItem* pi = scene->addPixmap(QPixmap::fromImage(img).scaledToWidth(500));
 			pi->setFlag(QGraphicsItem::ItemIsMovable,true);
 			pi->setFlag(QGraphicsItem::ItemIsSelectable,true);
 			pi->setPos(qrand()*500/RAND_MAX,qrand()*500/RAND_MAX);
