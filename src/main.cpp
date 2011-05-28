@@ -2,6 +2,9 @@
 #include <QtGui>
 #include <QtCore>
 
+#define IMAGENS_WIDTH 200
+#define HISTOGRAMA_WIDTH 300
+
 class MainForm : public QMainWindow
 {
 	Q_OBJECT
@@ -195,6 +198,7 @@ public:
                     QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), label, SLOT(setNum(int)));
                     QObject::connect(loadButton, SIGNAL(clicked()), this, SLOT(LoadImage()));
                     QObject::connect(calculateButton, SIGNAL(clicked()), this, SLOT(CalcularHistograma()));
+                    QObject::connect(adjustButton, SIGNAL(clicked()), this, SLOT(AdjustImage()));
 
                     QMetaObject::connectSlotsByName(this);
 
@@ -215,8 +219,8 @@ protected slots:
                 imagem_ini = QImage(filename);
 		
                 if (!imagem_ini.isNull()) {
-                    QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(500));
-                    pi->setPos(qrand()*500/RAND_MAX,qrand()*500/RAND_MAX);
+                    QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
+                    pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
                     loadButton->setEnabled(false);
                     calculateButton->setEnabled(true);
                 }
@@ -244,9 +248,22 @@ protected slots:
                      out1 << i << " " << histograma[0][i] << endl;
                      out2 << i << " " << histograma[1][i] << endl;
                      out3 << i << " " << histograma[2][i] << endl;
+                     out4 << i << " " << histograma[3][i] << endl;
                  }
                  QProcess gnuplot;
-                 printf("Codigo de erro %d ",gnuplot.execute("gnuplot",QStringList() << "script.gnuplot"));
+                 gnuplot.execute("gnuplot",QStringList() << "script.gnuplot");
+                  QImage vermelho("vermelho.png");
+                  QImage verde("verde.png");
+                  QImage azul("azul.png");
+                  QImage brilho("brilho.png");
+                  QGraphicsPixmapItem* hvm = histograma_vermelho->addPixmap(QPixmap::fromImage(vermelho).scaledToWidth(HISTOGRAMA_WIDTH));
+                  hvm->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
+                  QGraphicsPixmapItem* hvd = histograma_verde->addPixmap(QPixmap::fromImage(verde).scaledToWidth(HISTOGRAMA_WIDTH));
+                  hvd->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
+                  QGraphicsPixmapItem* ha = histograma_azul->addPixmap(QPixmap::fromImage(azul).scaledToWidth(HISTOGRAMA_WIDTH));
+                  ha->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
+                  QGraphicsPixmapItem* hb = histograma_brilho->addPixmap(QPixmap::fromImage(brilho).scaledToWidth(HISTOGRAMA_WIDTH));
+                  hb->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
 
              }
              else{
@@ -259,41 +276,55 @@ protected slots:
         void CalcularHistograma(){
             if(!adjustButton->isEnabled()){
                 calculateButton->setEnabled(false);
-                calculateButton->setText("Calculando histograma..");
+                //Colocar um refresh aqui, para atualizar o botao pra false
+                //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
                 for (int i=0; i<imagem_ini.width(); i++)
                   for (int j=0; j<imagem_ini.height(); j++)
                   {
                     histograma_inicial[0][qRed(imagem_ini.pixel(i,j))]++;
                     histograma_inicial[1][qGreen(imagem_ini.pixel(i,j))]++;
                     histograma_inicial[2][qBlue(imagem_ini.pixel(i,j))]++;
+                    histograma_inicial[3][(qRed(imagem_ini.pixel(i,j))+qGreen(imagem_ini.pixel(i,j))+qBlue(imagem_ini.pixel(i,j)))/3]++;
                   }
+                //ATE AQUI. mostrar com uma QMessageBox o tempo
                 ImprimirHistograma(histograma_inicial);
                 calculateButton->setEnabled(true);
-                calculateButton->setText("Calcular histograma");
+                adjustButton->setEnabled(true);
             }
             else
             {
+                calculateButton->setEnabled(false);
+                //Colocar um refresh aqui, para atualizar o botao pra false
+                //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
                 for (int i=0; i<imagem_ini.width(); i++)
                   for (int j=0; j<imagem_ini.height(); j++)
                   {
-                      histograma_final[0][qRed(imagem_ini.pixel(i,j))]++;
-                      histograma_final[1][qGreen(imagem_ini.pixel(i,j))]++;
-                      histograma_final[2][qBlue(imagem_ini.pixel(i,j))]++;
+                    histograma_final[0][qRed(imagem_ini.pixel(i,j))]++;
+                    histograma_final[1][qGreen(imagem_ini.pixel(i,j))]++;
+                    histograma_final[2][qBlue(imagem_ini.pixel(i,j))]++;
+                    histograma_final[3][(qRed(imagem_ini.pixel(i,j))+qGreen(imagem_ini.pixel(i,j))+qBlue(imagem_ini.pixel(i,j)))/3]++;
                   }
-
+                //ATE AQUI. mostrar com uma QMessageBox o tempo
+                ImprimirHistograma(histograma_final);
+                calculateButton->setEnabled(true);
+                adjustButton->setEnabled(true);
             }
 
         }
 
 	void AdjustImage()
 	{
+                //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
                 for (int i=0; i<imagem_ini.width(); i++)
                   for (int j=0; j<imagem_ini.height(); j++)
                     imagem_ini.setPixel(i,j, ~(imagem_ini.pixel(QPoint(i,j))));
+                //ATE AQUI. mostrar com uma QMessageBox o tempo
 		  
-                QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(500));
-		pi->setPos(qrand()*500/RAND_MAX,qrand()*500/RAND_MAX);
-	}
+                QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
+                pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
+
+                calculateButton->setText("Calcular histograma da nova imagem");
+        }
 	
 private:
   
