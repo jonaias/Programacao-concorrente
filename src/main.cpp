@@ -1,9 +1,10 @@
+#include <omp.h>
 #include <QApplication>
 #include <QtGui>
 #include <QtCore>
 
-#define IMAGENS_WIDTH 200
-#define HISTOGRAMA_WIDTH 300
+#define IMAGENS_WIDTH 400
+#define HISTOGRAMA_WIDTH 250
 
 class MainForm : public QMainWindow
 {
@@ -169,7 +170,7 @@ public:
                     this->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", 0, QApplication::UnicodeUTF8));
                     actionQuit->setText(QApplication::translate("MainWindow", "&Quit", 0, QApplication::UnicodeUTF8));
                     loadButton->setText(QApplication::translate("MainWindow", "Carregar imagem", 0, QApplication::UnicodeUTF8));
-                    calculateButton->setText(QApplication::translate("MainWindow", "Calcular histograma", 0, QApplication::UnicodeUTF8));
+                    calculateButton->setText(QApplication::translate("MainWindow", "Calcular histograma da imagem original", 0, QApplication::UnicodeUTF8));
                     groupBox->setTitle(QApplication::translate("MainWindow", "Realizar ajustes", 0, QApplication::UnicodeUTF8));
                     adjustButton->setText(QApplication::translate("MainWindow", "Ajustar", 0, QApplication::UnicodeUTF8));
                     radioButton_2->setText(QApplication::translate("MainWindow", "R", 0, QApplication::UnicodeUTF8));
@@ -196,22 +197,23 @@ public:
                     graphicsView_6->setScene(histograma_brilho);
 
                     QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), label, SLOT(setNum(int)));
+                    QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(SetNumThreads(int)));
                     QObject::connect(loadButton, SIGNAL(clicked()), this, SLOT(LoadImage()));
                     QObject::connect(calculateButton, SIGNAL(clicked()), this, SLOT(CalcularHistograma()));
                     QObject::connect(adjustButton, SIGNAL(clicked()), this, SLOT(AdjustImage()));
 
                     QMetaObject::connectSlotsByName(this);
 
-                    for (int i=0; i<4; i++)
-                        for(int j=0;j<256;j++)
-                    {
-                        histograma_inicial[i][j]=0;
-                        histograma_final[i][j]=0;
-                    }
-
 	}
+
+        void ClearHistograms(int histogram[4][256]){
+            memset(histogram,0,4*256*sizeof(int));
+        }
 	
 protected slots:
+        void SetNumThreads(int num_threads){
+            omp_set_num_threads(num_threads);
+        }
   
 	void LoadImage()
 	{
@@ -250,6 +252,10 @@ protected slots:
                      out3 << i << " " << histograma[2][i] << endl;
                      out4 << i << " " << histograma[3][i] << endl;
                  }
+                 input1.close();
+                 input2.close();
+                 input3.close();
+                 input4.close();
                  QProcess gnuplot;
                  gnuplot.execute("gnuplot",QStringList() << "script.gnuplot");
                   QImage vermelho("vermelho.png");
@@ -278,6 +284,8 @@ protected slots:
                 calculateButton->setEnabled(false);
                 //Colocar um refresh aqui, para atualizar o botao pra false
                 //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
+                ClearHistograms(histograma_inicial);
+                #pragma omp parallel for
                 for (int i=0; i<imagem_ini.width(); i++)
                   for (int j=0; j<imagem_ini.height(); j++)
                   {
@@ -296,6 +304,8 @@ protected slots:
                 calculateButton->setEnabled(false);
                 //Colocar um refresh aqui, para atualizar o botao pra false
                 //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
+                ClearHistograms(histograma_final);
+                #pragma omp parallel for
                 for (int i=0; i<imagem_ini.width(); i++)
                   for (int j=0; j<imagem_ini.height(); j++)
                   {
@@ -315,6 +325,7 @@ protected slots:
 	void AdjustImage()
 	{
                 //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
+                #pragma omp parallel for
                 for (int i=0; i<imagem_ini.width(); i++)
                   for (int j=0; j<imagem_ini.height(); j++)
                     imagem_ini.setPixel(i,j, ~(imagem_ini.pixel(QPoint(i,j))));
