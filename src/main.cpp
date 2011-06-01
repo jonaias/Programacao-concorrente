@@ -204,6 +204,8 @@ public:
 
                     QMetaObject::connectSlotsByName(this);
 
+                    SetNumThreads(1);
+
 	}
 
         void ClearHistograms(int histogram[4][256]){
@@ -280,10 +282,10 @@ protected slots:
         }
 	
         void CalcularHistograma(){
-            if(!adjustButton->isEnabled()){
                 calculateButton->setEnabled(false);
                 //Colocar um refresh aqui, para atualizar o botao pra false
                 //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
+                time_measurer.start();
                 ClearHistograms(histograma_inicial);
                 #pragma omp parallel for
                 for (int i=0; i<imagem_ini.width(); i++)
@@ -294,32 +296,11 @@ protected slots:
                     histograma_inicial[2][qBlue(imagem_ini.pixel(i,j))]++;
                     histograma_inicial[3][(qRed(imagem_ini.pixel(i,j))+qGreen(imagem_ini.pixel(i,j))+qBlue(imagem_ini.pixel(i,j)))/3]++;
                   }
+                printf("%f tempo\n",(time_measurer.elapsed())/1000.0);
                 //ATE AQUI. mostrar com uma QMessageBox o tempo
                 ImprimirHistograma(histograma_inicial);
                 calculateButton->setEnabled(true);
                 adjustButton->setEnabled(true);
-            }
-            else
-            {
-                calculateButton->setEnabled(false);
-                //Colocar um refresh aqui, para atualizar o botao pra false
-                //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
-                ClearHistograms(histograma_final);
-                #pragma omp parallel for
-                for (int i=0; i<imagem_ini.width(); i++)
-                  for (int j=0; j<imagem_ini.height(); j++)
-                  {
-                    histograma_final[0][qRed(imagem_ini.pixel(i,j))]++;
-                    histograma_final[1][qGreen(imagem_ini.pixel(i,j))]++;
-                    histograma_final[2][qBlue(imagem_ini.pixel(i,j))]++;
-                    histograma_final[3][(qRed(imagem_ini.pixel(i,j))+qGreen(imagem_ini.pixel(i,j))+qBlue(imagem_ini.pixel(i,j)))/3]++;
-                  }
-                //ATE AQUI. mostrar com uma QMessageBox o tempo
-                ImprimirHistograma(histograma_final);
-                calculateButton->setEnabled(true);
-                adjustButton->setEnabled(true);
-            }
-
         }
 
 	void AdjustImage()
@@ -379,8 +360,9 @@ private:
        QGraphicsScene *histograma_azul;
        QGraphicsScene *histograma_brilho;
 
+       QElapsedTimer time_measurer;
+
        int histograma_inicial[4][256];
-       int histograma_final[4][256];
 
 };
 
