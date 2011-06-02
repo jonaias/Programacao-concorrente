@@ -3,8 +3,8 @@
 #include <QtGui>
 #include <QtCore>
 
-#define IMAGENS_WIDTH 400
-#define HISTOGRAMA_WIDTH 250
+#define IMAGENS_WIDTH 350
+#define HISTOGRAMA_WIDTH 400
 
 class MainForm : public QMainWindow
 {
@@ -29,12 +29,12 @@ public:
                     graphicsView = new QGraphicsView(centralwidget);
                     graphicsView->setObjectName(QString::fromUtf8("graphicsView"));
 
-                    horizontalLayout->addWidget(graphicsView);
+                    //horizontalLayout->addWidget(graphicsView);
 
                     graphicsView_2 = new QGraphicsView(centralwidget);
                     graphicsView_2->setObjectName(QString::fromUtf8("graphicsView_2"));
 
-                    horizontalLayout->addWidget(graphicsView_2);
+                    //horizontalLayout->addWidget(graphicsView_2);
 
 
                     verticalLayout->addLayout(horizontalLayout);
@@ -125,7 +125,7 @@ public:
                     horizontalSlider->setObjectName(QString::fromUtf8("horizontalSlider"));
                     horizontalSlider->setAutoFillBackground(true);
                     horizontalSlider->setMinimum(1);
-                    horizontalSlider->setMaximum(8);
+                    horizontalSlider->setMaximum(256);
                     horizontalSlider->setPageStep(1);
                     horizontalSlider->setOrientation(Qt::Horizontal);
                     horizontalSlider->setTickPosition(QSlider::TicksBelow);
@@ -134,7 +134,10 @@ public:
                     verticalLayout_4->addWidget(horizontalSlider);
 
 
-                    horizontalLayout_3->addWidget(groupBox_2);
+                    //horizontalLayout_3->addWidget(groupBox_2);
+                    horizontalLayout->addWidget(graphicsView);
+                    horizontalLayout->addWidget(groupBox_2);
+                    horizontalLayout->addWidget(graphicsView_2);
 
                     graphicsView_6 = new QGraphicsView(centralwidget);
                     graphicsView_6->setObjectName(QString::fromUtf8("graphicsView_6"));
@@ -169,15 +172,15 @@ public:
                     this->setStatusBar(statusbar);
                     this->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", 0, QApplication::UnicodeUTF8));
                     actionQuit->setText(QApplication::translate("MainWindow", "&Quit", 0, QApplication::UnicodeUTF8));
-                    loadButton->setText(QApplication::translate("MainWindow", "Carregar imagem", 0, QApplication::UnicodeUTF8));
-                    calculateButton->setText(QApplication::translate("MainWindow", "Calcular histograma da imagem original", 0, QApplication::UnicodeUTF8));
-                    groupBox->setTitle(QApplication::translate("MainWindow", "Realizar ajustes", 0, QApplication::UnicodeUTF8));
-                    adjustButton->setText(QApplication::translate("MainWindow", "Ajustar", 0, QApplication::UnicodeUTF8));
+                    loadButton->setText(QApplication::translate("MainWindow", "Load image", 0, QApplication::UnicodeUTF8));
+                    calculateButton->setText(QApplication::translate("MainWindow", "Calculate original image histogram", 0, QApplication::UnicodeUTF8));
+                    groupBox->setTitle(QApplication::translate("MainWindow", "Make adjusts", 0, QApplication::UnicodeUTF8));
+                    adjustButton->setText(QApplication::translate("MainWindow", "Adjust", 0, QApplication::UnicodeUTF8));
                     radioButton_2->setText(QApplication::translate("MainWindow", "R", 0, QApplication::UnicodeUTF8));
                     radioButton->setText(QApplication::translate("MainWindow", "G", 0, QApplication::UnicodeUTF8));
                     radioButton_3->setText(QApplication::translate("MainWindow", "B", 0, QApplication::UnicodeUTF8));
-                    radioButton_4->setText(QApplication::translate("MainWindow", "Brilho", 0, QApplication::UnicodeUTF8));
-                    groupBox_2->setTitle(QApplication::translate("MainWindow", "Numero de Threads  Global:", 0, QApplication::UnicodeUTF8));
+                    radioButton_4->setText(QApplication::translate("MainWindow", "brit", 0, QApplication::UnicodeUTF8));
+                    groupBox_2->setTitle(QApplication::translate("MainWindow", "Global threads number:", 0, QApplication::UnicodeUTF8));
                     label->setText(QApplication::translate("MainWindow", "1", 0, QApplication::UnicodeUTF8));
 
                     imagem_inicial = new QGraphicsScene();
@@ -196,10 +199,10 @@ public:
                     graphicsView_5->setScene(histograma_azul);
                     graphicsView_6->setScene(histograma_brilho);
 
-                    QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), label, SLOT(setNum(int)));
-                    QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(SetNumThreads(int)));
+                    QObject::connect(horizontalSlider, SIGNAL(valueChanged(int)), label, SLOT(setNum(int)));
+                    QObject::connect(horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(SetNumThreads(int)));
                     QObject::connect(loadButton, SIGNAL(clicked()), this, SLOT(LoadImage()));
-                    QObject::connect(calculateButton, SIGNAL(clicked()), this, SLOT(CalcularHistograma()));
+                    QObject::connect(calculateButton, SIGNAL(clicked()), this, SLOT(GenerateHistogram()));
                     QObject::connect(adjustButton, SIGNAL(clicked()), this, SLOT(AdjustImage()));
 
                     QMetaObject::connectSlotsByName(this);
@@ -212,30 +215,27 @@ public:
             memset(histogram,0,4*256*sizeof(int));
         }
 	
-protected slots:
-        void SetNumThreads(int num_threads){
-            omp_set_num_threads(num_threads);
-        }
-  
-	void LoadImage()
-	{
-		filename = QFileDialog::getOpenFileName(0, "Open Image", "", "All files (*.*)");
-                imagem_ini = QImage(filename);
-		
-                if (!imagem_ini.isNull()) {
-                    QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
-                    pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
-                    loadButton->setEnabled(false);
-                    calculateButton->setEnabled(true);
-                }
-                else{
-                    QMessageBox msgBox;
-                    msgBox.setText("Imagem invalida");
-                    msgBox.exec();
-                }
-	}
 
-        void ImprimirHistograma(int histograma[4][256]){
+        float CalculateHistogram(){
+            QElapsedTimer time_measurer;
+
+            ClearHistograms(histogram_matrix);
+
+            time_measurer.start();
+            #pragma omp parallel for
+            for (int i=0; i<imagem_ini.width(); i++)
+              for (int j=0; j<imagem_ini.height(); j++)
+              {
+                histogram_matrix[0][qRed(imagem_ini.pixel(i,j))]++;
+                histogram_matrix[1][qGreen(imagem_ini.pixel(i,j))]++;
+                histogram_matrix[2][qBlue(imagem_ini.pixel(i,j))]++;
+                histogram_matrix[3][(qRed(imagem_ini.pixel(i,j))+qGreen(imagem_ini.pixel(i,j))+qBlue(imagem_ini.pixel(i,j)))/3]++;
+              }
+
+            return time_measurer.elapsed()/1000.0;
+        }
+
+        void DisplayHistogram(int histograma[4][256]){
             QFile input1("input1");
             QFile input2("input2");
             QFile input3("input3");
@@ -276,32 +276,56 @@ protected slots:
              }
              else{
                  QMessageBox msgBox;
-                 msgBox.setText("Nao foi possivel abrir arquivos para leitura");
+                 msgBox.setText("Cannot open files to write");
                  msgBox.exec();
              }
         }
+
+protected slots:
+        void SetNumThreads(int num_threads){
+            omp_set_num_threads(num_threads);
+        }
+  
+	void LoadImage()
+	{
+		filename = QFileDialog::getOpenFileName(0, "Open Image", "", "All files (*.*)");
+                imagem_ini = QImage(filename);
+		
+                if (!imagem_ini.isNull()) {
+                    QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
+                    pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
+                    loadButton->setEnabled(false);
+                    calculateButton->setEnabled(true);
+                }
+                else{
+                    QMessageBox msgBox;
+                    msgBox.setText("Wrong image format.");
+                    msgBox.exec();
+                }
+	}
 	
-        void CalcularHistograma(){
+        void GenerateHistogram(){
+                float time_elapsed;
+                QString buffer;
+
                 calculateButton->setEnabled(false);
-                //Colocar um refresh aqui, para atualizar o botao pra false
-                //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
-                time_measurer.start();
-                ClearHistograms(histograma_inicial);
-                #pragma omp parallel for
-                for (int i=0; i<imagem_ini.width(); i++)
-                  for (int j=0; j<imagem_ini.height(); j++)
-                  {
-                    histograma_inicial[0][qRed(imagem_ini.pixel(i,j))]++;
-                    histograma_inicial[1][qGreen(imagem_ini.pixel(i,j))]++;
-                    histograma_inicial[2][qBlue(imagem_ini.pixel(i,j))]++;
-                    histograma_inicial[3][(qRed(imagem_ini.pixel(i,j))+qGreen(imagem_ini.pixel(i,j))+qBlue(imagem_ini.pixel(i,j)))/3]++;
-                  }
-                printf("%f tempo\n",(time_measurer.elapsed())/1000.0);
-                //ATE AQUI. mostrar com uma QMessageBox o tempo
-                ImprimirHistograma(histograma_inicial);
+
+                buffer = calculateButton->text();
+                calculateButton->setText("Calculating histogram...");
+
+                statusbar->showMessage("Calculating histogram with "+ QString().setNum(omp_get_max_threads()) +" processors.");
+
+                time_elapsed = CalculateHistogram();
+
+                statusbar->showMessage("Time to calculate histogram with "+ QString().setNum(omp_get_max_threads()) +" processors was " + QString().setNum(time_elapsed,'f',3) + "s");
+
+                DisplayHistogram(histogram_matrix);
+
+                calculateButton->setText(buffer);
                 calculateButton->setEnabled(true);
                 adjustButton->setEnabled(true);
         }
+
 
 	void AdjustImage()
 	{
@@ -360,9 +384,8 @@ private:
        QGraphicsScene *histograma_azul;
        QGraphicsScene *histograma_brilho;
 
-       QElapsedTimer time_measurer;
 
-       int histograma_inicial[4][256];
+       int histogram_matrix[4][256];
 
 };
 
