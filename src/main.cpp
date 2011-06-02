@@ -3,8 +3,8 @@
 #include <QtGui>
 #include <QtCore>
 
-#define IMAGENS_WIDTH 350
-#define HISTOGRAMA_WIDTH 400
+#define IMAGENS_WIDTH 300
+#define HISTOGRAMA_WIDTH 350
 
 class MainForm : public QMainWindow
 {
@@ -18,8 +18,6 @@ public:
                         this->setObjectName(QString::fromUtf8("MainWindow"));
                     this->setWindowModality(Qt::NonModal);
                     this->resize(688, 549);
-                    actionQuit = new QAction(this);
-                    actionQuit->setObjectName(QString::fromUtf8("actionQuit"));
                     centralwidget = new QWidget(this);
                     centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
                     verticalLayout = new QVBoxLayout(centralwidget);
@@ -29,12 +27,21 @@ public:
                     graphicsView = new QGraphicsView(centralwidget);
                     graphicsView->setObjectName(QString::fromUtf8("graphicsView"));
 
-                    //horizontalLayout->addWidget(graphicsView);
+                    horizontalLayout->addWidget(graphicsView);
+
+
+
+                    //horizontalLayout_3->addWidget(groupBox_2);
+
+                    groupBox_2 = new QGroupBox(centralwidget);
+                    groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
+                    horizontalLayout->addWidget(groupBox_2);
+
 
                     graphicsView_2 = new QGraphicsView(centralwidget);
                     graphicsView_2->setObjectName(QString::fromUtf8("graphicsView_2"));
 
-                    //horizontalLayout->addWidget(graphicsView_2);
+                    horizontalLayout->addWidget(graphicsView_2);
 
 
                     verticalLayout->addLayout(horizontalLayout);
@@ -104,8 +111,7 @@ public:
 
                     horizontalLayout_3 = new QHBoxLayout();
                     horizontalLayout_3->setObjectName(QString::fromUtf8("horizontalLayout_3"));
-                    groupBox_2 = new QGroupBox(centralwidget);
-                    groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
+
                     verticalLayout_4 = new QVBoxLayout(groupBox_2);
                     verticalLayout_4->setObjectName(QString::fromUtf8("verticalLayout_4"));
                     label = new QLabel(groupBox_2);
@@ -133,12 +139,6 @@ public:
 
                     verticalLayout_4->addWidget(horizontalSlider);
 
-
-                    //horizontalLayout_3->addWidget(groupBox_2);
-                    horizontalLayout->addWidget(graphicsView);
-                    horizontalLayout->addWidget(groupBox_2);
-                    horizontalLayout->addWidget(graphicsView_2);
-
                     graphicsView_6 = new QGraphicsView(centralwidget);
                     graphicsView_6->setObjectName(QString::fromUtf8("graphicsView_6"));
 
@@ -163,15 +163,11 @@ public:
                     verticalLayout->addLayout(horizontalLayout_3);
 
                     this-> setCentralWidget(centralwidget);
-                    menubar = new QMenuBar(this);
-                    menubar->setObjectName(QString::fromUtf8("menubar"));
-                    menubar->setGeometry(QRect(0, 0, 688, 25));
-                    this->setMenuBar(menubar);
+
                     statusbar = new QStatusBar(this);
                     statusbar->setObjectName(QString::fromUtf8("statusbar"));
                     this->setStatusBar(statusbar);
-                    this->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", 0, QApplication::UnicodeUTF8));
-                    actionQuit->setText(QApplication::translate("MainWindow", "&Quit", 0, QApplication::UnicodeUTF8));
+                    this->setWindowTitle(QApplication::translate("MainWindow", "Image adjuster", 0, QApplication::UnicodeUTF8));
                     loadButton->setText(QApplication::translate("MainWindow", "Load image", 0, QApplication::UnicodeUTF8));
                     calculateButton->setText(QApplication::translate("MainWindow", "Calculate original image histogram", 0, QApplication::UnicodeUTF8));
                     groupBox->setTitle(QApplication::translate("MainWindow", "Make adjusts", 0, QApplication::UnicodeUTF8));
@@ -343,8 +339,7 @@ protected slots:
         }
 	
 private:
-  
-       QAction *actionQuit;
+
        QWidget *centralwidget;
        QVBoxLayout *verticalLayout;
        QHBoxLayout *horizontalLayout;
@@ -372,7 +367,6 @@ private:
        QGraphicsView *graphicsView_5;
        QGraphicsView *graphicsView_4;
        QGraphicsView *graphicsView_3;
-       QMenuBar *menubar;
        QStatusBar *statusbar;
 
        QString filename;
