@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QtGui>
 #include <QtCore>
+#include "filters.h"
 
 #define IMAGENS_WIDTH 300
 #define HISTOGRAMA_WIDTH 350
@@ -100,6 +101,10 @@ public:
 
                     verticalLayout_2->addWidget(radioButton_4);
 
+                    radioButton_5 = new QRadioButton(groupBox);
+                    radioButton_5->setObjectName(QString::fromUtf8("radioButton_5"));
+
+                    verticalLayout_2->addWidget(radioButton_5);
 
                     horizontalLayout_4->addLayout(verticalLayout_2);
 
@@ -175,7 +180,8 @@ public:
                     radioButton_2->setText(QApplication::translate("MainWindow", "R", 0, QApplication::UnicodeUTF8));
                     radioButton->setText(QApplication::translate("MainWindow", "G", 0, QApplication::UnicodeUTF8));
                     radioButton_3->setText(QApplication::translate("MainWindow", "B", 0, QApplication::UnicodeUTF8));
-                    radioButton_4->setText(QApplication::translate("MainWindow", "brit", 0, QApplication::UnicodeUTF8));
+                    radioButton_4->setText(QApplication::translate("MainWindow", "Contraste", 0, QApplication::UnicodeUTF8));
+                    radioButton_5->setText(QApplication::translate("MainWindow", "Brilho", 0, QApplication::UnicodeUTF8));
                     groupBox_2->setTitle(QApplication::translate("MainWindow", "Global threads number:", 0, QApplication::UnicodeUTF8));
                     label->setText(QApplication::translate("MainWindow", "1", 0, QApplication::UnicodeUTF8));
 
@@ -200,6 +206,8 @@ public:
                     QObject::connect(loadButton, SIGNAL(clicked()), this, SLOT(LoadImage()));
                     QObject::connect(calculateButton, SIGNAL(clicked()), this, SLOT(GenerateHistogram()));
                     QObject::connect(adjustButton, SIGNAL(clicked()), this, SLOT(AdjustImage()));
+                    QObject::connect(radioButton_4, SIGNAL(clicked()), this, SLOT(correctContrast()));
+                    QObject::connect(radioButton_5, SIGNAL(clicked()), this, SLOT(increaseBrightness()));
 
                     QMetaObject::connectSlotsByName(this);
 
@@ -278,6 +286,19 @@ public:
         }
 
 protected slots:
+
+        void correctContrast(){
+            equalization(histogram_matrix[0], transformMatrix[0], imagem_ini.width(),imagem_ini.height());
+            equalization(histogram_matrix[1], transformMatrix[1], imagem_ini.width(),imagem_ini.height());
+            equalization(histogram_matrix[2], transformMatrix[2], imagem_ini.width(),imagem_ini.height());
+        }
+
+	void increaseBrightness(){
+            brightness(transformMatrix[0], 10);
+            brightness(transformMatrix[1], 10);
+            brightness(transformMatrix[2], 10);
+        }
+
         void SetNumThreads(int num_threads){
             omp_set_num_threads(num_threads);
         }
@@ -329,7 +350,7 @@ protected slots:
                 #pragma omp parallel for
                 for (int i=0; i<imagem_ini.width(); i++)
                   for (int j=0; j<imagem_ini.height(); j++)
-                    imagem_ini.setPixel(i,j, ~(imagem_ini.pixel(QPoint(i,j))));
+                      imagem_ini.setPixel(i,j, qRgb(transformMatrix[0][qRed(imagem_ini.pixel(i,j))], transformMatrix[1][qGreen((imagem_ini.pixel(i,j)))], transformMatrix[2][qBlue(imagem_ini.pixel(i, j))]));
                 //ATE AQUI. mostrar com uma QMessageBox o tempo
 		  
                 QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
@@ -358,6 +379,7 @@ private:
        QRadioButton *radioButton;
        QRadioButton *radioButton_3;
        QRadioButton *radioButton_4;
+       QRadioButton *radioButton_5;
        QHBoxLayout *horizontalLayout_3;
        QGroupBox *groupBox_2;
        QVBoxLayout *verticalLayout_4;
@@ -380,6 +402,7 @@ private:
 
 
        int histogram_matrix[4][256];
+       int transformMatrix[3][256];
 
 };
 
@@ -387,7 +410,7 @@ int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 	app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
-	
+
 	MainForm form;
 	form.setGeometry(100,100,1000,680);
 	form.show();
