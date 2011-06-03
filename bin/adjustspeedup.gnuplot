@@ -1,12 +1,14 @@
 set terminal png
-set xlabel 'Number of cores'
+set xlabel 'Number of threads'
 set ylabel 'Speedup'
+set y2label 'Execution time(s)'
+set y2range [0:]
 set log x 2
 set log y 2
 set grid
-set output 'adjustspeedup2graphs.png'
-set multiplot layout 2,1
-plot 'adjustspeedup' using 1:3 with linesp linecolor rgbcolor "blue" title 'Archieved Speedup', 'adjustspeedup' using 1:2 with linesp linecolor rgbcolor "red" title 'Ideal Speedup'
-set ylabel 'Execution time(s)'
-plot 'adjustspeedup' using 1:4 with linesp linecolor rgbcolor "green" title 'Time'
-unset multiplot
+set y2tics border
+set output 'adjustspeedup.png'
+plot 'adjustspeedup' using 1:3 with linesp linecolor rgbcolor "blue" title 'Achieved Speedup', \
+	 'adjustspeedup' using 1:2 with linesp linecolor rgbcolor "red" title 'Ideal Speedup',\
+	 'adjustspeedup' using 1:4 axes x1y2 with linesp linecolor rgbcolor "green" title 'Time'
+

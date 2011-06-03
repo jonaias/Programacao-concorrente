@@ -267,10 +267,6 @@ public:
               for (int j=0; j<imagem_ini.height(); j++)
                   imagem_ini.setPixel(i,j, qRgb(transformMatrix[0][qRed(imagem_ini.pixel(i,j))], transformMatrix[1][qGreen((imagem_ini.pixel(i,j)))], transformMatrix[2][qBlue(imagem_ini.pixel(i, j))]));
 
-
-            QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
-            pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
-
             return time_measurer.elapsed()/1000.0;
         }
 
@@ -469,6 +465,9 @@ protected slots:
             statusbar->showMessage("Calculating image with "+ QString().setNum(omp_get_max_threads()) +" processors.");
 
             time_elapsed = CalculateAdjust();
+
+            QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
+            pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
 
             statusbar->showMessage("Time to calculate histogram with "+ QString().setNum(omp_get_max_threads()) +" processors was " + QString().setNum(time_elapsed,'f',3) + "s");
 
