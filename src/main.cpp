@@ -87,29 +87,35 @@ public:
 
                     verticalLayout_2 = new QVBoxLayout();
                     verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
-                    radioButton_2 = new QRadioButton(groupBox);
+
+                    /*radioButton_2 = new QRadioButton(groupBox);
                     radioButton_2->setObjectName(QString::fromUtf8("radioButton_2"));
                     radioButton_2->setChecked(true);
 
-                    verticalLayout_2->addWidget(radioButton_2);
+                    verticalLayout_2->addWidget(radioButton_2);*/
 
-                    radioButton = new QRadioButton(groupBox);
+
+                    /*radioButton = new QRadioButton(groupBox);
                     radioButton->setObjectName(QString::fromUtf8("radioButton"));
 
-                    verticalLayout_2->addWidget(radioButton);
+                    verticalLayout_2->addWidget(radioButton);*/
 
-                    radioButton_3 = new QRadioButton(groupBox);
+
+                    /*radioButton_3 = new QRadioButton(groupBox);
                     radioButton_3->setObjectName(QString::fromUtf8("radioButton_3"));
 
-                    verticalLayout_2->addWidget(radioButton_3);
+                    verticalLayout_2->addWidget(radioButton_3);*/
 
                     radioButton_4 = new QRadioButton(groupBox);
                     radioButton_4->setObjectName(QString::fromUtf8("radioButton_4"));
+                    radioButton_4->setEnabled(false);
 
                     verticalLayout_2->addWidget(radioButton_4);
 
                     radioButton_5 = new QRadioButton(groupBox);
                     radioButton_5->setObjectName(QString::fromUtf8("radioButton_5"));
+                    radioButton_5->setEnabled(false);
+                    radioButton_5->setChecked(true);
 
                     verticalLayout_2->addWidget(radioButton_5);
 
@@ -185,9 +191,9 @@ public:
                     calculateButton->setText(QApplication::translate("MainWindow", "Calculate original image histogram", 0, QApplication::UnicodeUTF8));
                     groupBox->setTitle(QApplication::translate("MainWindow", "Make adjusts", 0, QApplication::UnicodeUTF8));
                     adjustButton->setText(QApplication::translate("MainWindow", "Adjust", 0, QApplication::UnicodeUTF8));
-                    radioButton_2->setText(QApplication::translate("MainWindow", "R", 0, QApplication::UnicodeUTF8));
-                    radioButton->setText(QApplication::translate("MainWindow", "G", 0, QApplication::UnicodeUTF8));
-                    radioButton_3->setText(QApplication::translate("MainWindow", "B", 0, QApplication::UnicodeUTF8));
+                    //radioButton_2->setText(QApplication::translate("MainWindow", "R", 0, QApplication::UnicodeUTF8));
+                    //radioButton->setText(QApplication::translate("MainWindow", "G", 0, QApplication::UnicodeUTF8));
+                    //radioButton_3->setText(QApplication::translate("MainWindow", "B", 0, QApplication::UnicodeUTF8));
                     radioButton_4->setText(QApplication::translate("MainWindow", "Contraste", 0, QApplication::UnicodeUTF8));
                     radioButton_5->setText(QApplication::translate("MainWindow", "Brilho", 0, QApplication::UnicodeUTF8));
                     groupBox_2->setTitle(QApplication::translate("MainWindow", "Global threads number:", 0, QApplication::UnicodeUTF8));
@@ -214,13 +220,16 @@ public:
                     QObject::connect(benchmarkButton, SIGNAL(clicked()), this, SLOT(GenerateSpeedup()));
                     QObject::connect(loadButton, SIGNAL(clicked()), this, SLOT(LoadImage()));
                     QObject::connect(calculateButton, SIGNAL(clicked()), this, SLOT(GenerateHistogram()));
-                    QObject::connect(adjustButton, SIGNAL(clicked()), this, SLOT(AdjustImage()));
+                    QObject::connect(adjustButton, SIGNAL(clicked()), this, SLOT(GenerateImage()));
                     QObject::connect(radioButton_4, SIGNAL(clicked()), this, SLOT(correctContrast()));
                     QObject::connect(radioButton_5, SIGNAL(clicked()), this, SLOT(increaseBrightness()));
 
                     QMetaObject::connectSlotsByName(this);
 
                     SetNumThreads(1);
+
+                    /*Default option*/
+                    increaseBrightness();
 
 	}
 
@@ -244,6 +253,23 @@ public:
                 histogram_matrix[2][qBlue(imagem_ini.pixel(i,j))]++;
                 histogram_matrix[3][(qRed(imagem_ini.pixel(i,j))+qGreen(imagem_ini.pixel(i,j))+qBlue(imagem_ini.pixel(i,j)))/3]++;
               }
+
+            return time_measurer.elapsed()/1000.0;
+        }
+
+        float CalculateAdjust(){
+            QElapsedTimer time_measurer;
+
+            time_measurer.start();
+
+            #pragma omp parallel for
+            for (int i=0; i<imagem_ini.width(); i++)
+              for (int j=0; j<imagem_ini.height(); j++)
+                  imagem_ini.setPixel(i,j, qRgb(transformMatrix[0][qRed(imagem_ini.pixel(i,j))], transformMatrix[1][qGreen((imagem_ini.pixel(i,j)))], transformMatrix[2][qBlue(imagem_ini.pixel(i, j))]));
+
+
+            QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
+            pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
 
             return time_measurer.elapsed()/1000.0;
         }
@@ -309,7 +335,7 @@ protected slots:
 
                  float one_core_histogram_time=0,x_core_histogram_time=0;
 
-
+                 /* Generates histogram speedup */
                  out1<<"#Num_core\tideal_speedup\tarchieved_speedup\ttime(s)" << endl;
                  for(int i=1;i<=8;i++){
                      omp_set_num_threads(i);
@@ -330,11 +356,37 @@ protected slots:
                      out1.flush();
                  }
 
+
+                 /* Generates adjust speedup */
+                 out2<<"#Num_core\tideal_speedup\tarchieved_speedup\ttime(s)" << endl;
+                 for(int i=1;i<=8;i++){
+                     omp_set_num_threads(i);
+                     if(i==1){
+                        out2 << "1" <<"\t1"<<"\t1"<<"\t" << (one_core_histogram_time=CalculateAdjust()) << endl;
+                     }
+                     else{
+                        x_core_histogram_time = CalculateAdjust();
+                        out2 << i << "\t"<< i << "\t"<< (one_core_histogram_time/x_core_histogram_time) << "\t" << x_core_histogram_time << endl;
+                     }
+                     out2.flush();
+                 }
+
+                 for(int i=16;i<=256;i*=2){
+                     omp_set_num_threads(i);
+                     x_core_histogram_time = CalculateAdjust();
+                     out2 << i << "\t"<< i << "\t"<< (one_core_histogram_time/x_core_histogram_time) << "\t" << x_core_histogram_time << endl;
+                     out2.flush();
+                 }
+
                  input1.close();
                  input2.close();
                  QProcess gnuplot;
-                 gnuplot.execute("gnuplot",QStringList() << "speedup.gnuplot");
-                 gnuplot.execute("gnuplot",QStringList() << "speedup2graphs.gnuplot");
+                 gnuplot.execute("gnuplot",QStringList() << "histogramspeedup.gnuplot");
+                 gnuplot.execute("gnuplot",QStringList() << "histogramspeedup2graphs.gnuplot");
+                 gnuplot.execute("gnuplot",QStringList() << "adjustspeedup.gnuplot");
+                 gnuplot.execute("gnuplot",QStringList() << "adjustspeedup2graphs.gnuplot");
+
+                 calculateButton->setEnabled(false);
 
              }
              else{
@@ -351,9 +403,9 @@ protected slots:
         }
 
 	void increaseBrightness(){
-            brightness(transformMatrix[0], 10);
-            brightness(transformMatrix[1], 10);
-            brightness(transformMatrix[2], 10);
+            brightness(transformMatrix[0], 40);
+            brightness(transformMatrix[1], 40);
+            brightness(transformMatrix[2], 40);
         }
 
         void SetNumThreads(int num_threads){
@@ -397,24 +449,36 @@ protected slots:
                 DisplayHistogram(histogram_matrix);
 
                 calculateButton->setText(buffer);
+                radioButton_4->setEnabled(true);
+                radioButton_5->setEnabled(true);
                 calculateButton->setEnabled(true);
                 adjustButton->setEnabled(true);
         }
 
 
-	void AdjustImage()
+        void GenerateImage()
 	{
-                //TODO: Diretiva do openMP para tornar paralelo e calcular tempo DAQUI ( ate o proximo ATE AQUI )
-                #pragma omp parallel for
-                for (int i=0; i<imagem_ini.width(); i++)
-                  for (int j=0; j<imagem_ini.height(); j++)
-                      imagem_ini.setPixel(i,j, qRgb(transformMatrix[0][qRed(imagem_ini.pixel(i,j))], transformMatrix[1][qGreen((imagem_ini.pixel(i,j)))], transformMatrix[2][qBlue(imagem_ini.pixel(i, j))]));
-                //ATE AQUI. mostrar com uma QMessageBox o tempo
-		  
-                QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
-                pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
+            float time_elapsed;
+            QString buffer;
 
-                calculateButton->setText("Calcular histograma da nova imagem");
+            adjustButton->setEnabled(false);
+
+            buffer = adjustButton->text();
+            adjustButton->setText("Calculating image...");
+
+            statusbar->showMessage("Calculating image with "+ QString().setNum(omp_get_max_threads()) +" processors.");
+
+            time_elapsed = CalculateAdjust();
+
+            statusbar->showMessage("Time to calculate histogram with "+ QString().setNum(omp_get_max_threads()) +" processors was " + QString().setNum(time_elapsed,'f',3) + "s");
+
+            DisplayHistogram(histogram_matrix);
+
+            adjustButton->setText(buffer);
+            adjustButton->setEnabled(true);
+
+            calculateButton->setText("Calcule new image histogram");
+
         }
 	
 private:

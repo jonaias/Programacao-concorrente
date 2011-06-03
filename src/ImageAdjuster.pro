@@ -7,3 +7,6 @@ QMAKE_LFLAGS += -fopenmp
 LIBS += -lgomp
 
 DESTDIR = ../bin
+
+HEADERS += \
+    filters.h
