@@ -48,10 +48,15 @@ public:
 
                     horizontalLayout_2 = new QHBoxLayout();
                     horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
+
+                    benchmarkButton = new QPushButton(centralwidget);
+                    benchmarkButton->setObjectName(QString::fromUtf8("benchmarkButton"));
+                    horizontalLayout_2->addWidget(benchmarkButton);
+
                     loadButton = new QPushButton(centralwidget);
                     loadButton->setObjectName(QString::fromUtf8("loadButton"));
-
                     horizontalLayout_2->addWidget(loadButton);
+
 
                     horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
@@ -71,6 +76,8 @@ public:
                     groupBox->setObjectName(QString::fromUtf8("groupBox"));
                     horizontalLayout_4 = new QHBoxLayout(groupBox);
                     horizontalLayout_4->setObjectName(QString::fromUtf8("horizontalLayout_4"));
+
+
                     adjustButton = new QPushButton(groupBox);
                     adjustButton->setObjectName(QString::fromUtf8("adjustButton"));
                     adjustButton->setEnabled(false);
@@ -131,7 +138,7 @@ public:
                     horizontalSlider->setObjectName(QString::fromUtf8("horizontalSlider"));
                     horizontalSlider->setAutoFillBackground(true);
                     horizontalSlider->setMinimum(1);
-                    horizontalSlider->setMaximum(256);
+                    horizontalSlider->setMaximum(8);
                     horizontalSlider->setPageStep(1);
                     horizontalSlider->setOrientation(Qt::Horizontal);
                     horizontalSlider->setTickPosition(QSlider::TicksBelow);
@@ -169,6 +176,7 @@ public:
                     this->setStatusBar(statusbar);
                     this->setWindowTitle(QApplication::translate("MainWindow", "Image adjuster", 0, QApplication::UnicodeUTF8));
                     loadButton->setText(QApplication::translate("MainWindow", "Load image", 0, QApplication::UnicodeUTF8));
+                    benchmarkButton->setText(QApplication::translate("MainWindow", "Generate speedup graph", 0, QApplication::UnicodeUTF8));
                     calculateButton->setText(QApplication::translate("MainWindow", "Calculate original image histogram", 0, QApplication::UnicodeUTF8));
                     groupBox->setTitle(QApplication::translate("MainWindow", "Make adjusts", 0, QApplication::UnicodeUTF8));
                     adjustButton->setText(QApplication::translate("MainWindow", "Adjust", 0, QApplication::UnicodeUTF8));
@@ -197,6 +205,7 @@ public:
 
                     QObject::connect(horizontalSlider, SIGNAL(valueChanged(int)), label, SLOT(setNum(int)));
                     QObject::connect(horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(SetNumThreads(int)));
+                    QObject::connect(benchmarkButton, SIGNAL(clicked()), this, SLOT(GenerateSpeedup()));
                     QObject::connect(loadButton, SIGNAL(clicked()), this, SLOT(LoadImage()));
                     QObject::connect(calculateButton, SIGNAL(clicked()), this, SLOT(GenerateHistogram()));
                     QObject::connect(adjustButton, SIGNAL(clicked()), this, SLOT(AdjustImage()));
@@ -278,6 +287,55 @@ public:
         }
 
 protected slots:
+
+        void GenerateSpeedup(){
+
+            loadButton->click();
+
+            QFile input1("histogramspeedup");
+            QFile input2("adjustspeedup");
+             if (input1.open(QFile::WriteOnly | QFile::Truncate) |
+                 input2.open(QFile::WriteOnly | QFile::Truncate)) {
+                 QTextStream out1(&input1);
+                 QTextStream out2(&input2);
+
+                 float one_core_histogram_time=0,x_core_histogram_time=0;
+
+
+                 out1<<"#Num_core\tideal_speedup\tarchieved_speedup\ttime(s)" << endl;
+                 for(int i=1;i<=8;i++){
+                     omp_set_num_threads(i);
+                     if(i==1){
+                        out1 << "1" <<"\t1"<<"\t1"<<"\t" << (one_core_histogram_time=CalculateHistogram()) << endl;
+                     }
+                     else{
+                        x_core_histogram_time = CalculateHistogram();
+                        out1 << i << "\t"<< i << "\t"<< (one_core_histogram_time/x_core_histogram_time) << "\t" << x_core_histogram_time << endl;
+                     }
+                     out1.flush();
+                 }
+
+                 for(int i=16;i<=256;i*=2){
+                     omp_set_num_threads(i);
+                     x_core_histogram_time = CalculateHistogram();
+                     out1 << i << "\t"<< i << "\t"<< (one_core_histogram_time/x_core_histogram_time) << "\t" << x_core_histogram_time << endl;
+                     out1.flush();
+                 }
+
+                 input1.close();
+                 input2.close();
+                 QProcess gnuplot;
+                 gnuplot.execute("gnuplot",QStringList() << "speedup.gnuplot");
+                 gnuplot.execute("gnuplot",QStringList() << "speedup2graphs.gnuplot");
+
+             }
+             else{
+                 QMessageBox msgBox;
+                 msgBox.setText("Cannot open files to write speedup data");
+                 msgBox.exec();
+             }
+        }
+
         void SetNumThreads(int num_threads){
             omp_set_num_threads(num_threads);
         }
@@ -291,6 +349,7 @@ protected slots:
                     QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
                     pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
                     loadButton->setEnabled(false);
+                    loadButton->setText("Image loaded");
                     calculateButton->setEnabled(true);
                 }
                 else{
@@ -353,6 +412,7 @@ private:
        QGroupBox *groupBox;
        QHBoxLayout *horizontalLayout_4;
        QPushButton *adjustButton;
+       QPushButton *benchmarkButton;
        QVBoxLayout *verticalLayout_2;
        QRadioButton *radioButton_2;
        QRadioButton *radioButton;
