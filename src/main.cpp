@@ -13,6 +13,7 @@ class MainForm : public QMainWindow
 	
 public:
   
+        /* Generates main screen. */
 	MainForm()
 	{
             if (this->objectName().isEmpty())
@@ -29,8 +30,6 @@ public:
                     graphicsView->setObjectName(QString::fromUtf8("graphicsView"));
 
                     horizontalLayout->addWidget(graphicsView);
-
-
 
                     //horizontalLayout_3->addWidget(groupBox_2);
 
@@ -201,19 +200,19 @@ public:
 
                     imagem_inicial = new QGraphicsScene();
                     imagem_final = new QGraphicsScene();
-                    histograma_vermelho = new QGraphicsScene();
-                    histograma_verde = new QGraphicsScene();
-                    histograma_azul = new QGraphicsScene();
-                    histograma_brilho = new QGraphicsScene();
+                    red_histogram = new QGraphicsScene();
+                    green_histogram = new QGraphicsScene();
+                    blue_histogram = new QGraphicsScene();
+                    bright_histogram = new QGraphicsScene();
 
 
 
                     graphicsView->setScene(imagem_inicial);
                     graphicsView_2->setScene(imagem_final);
-                    graphicsView_3->setScene(histograma_vermelho);
-                    graphicsView_4->setScene(histograma_verde);
-                    graphicsView_5->setScene(histograma_azul);
-                    graphicsView_6->setScene(histograma_brilho);
+                    graphicsView_3->setScene(red_histogram);
+                    graphicsView_4->setScene(green_histogram);
+                    graphicsView_5->setScene(blue_histogram);
+                    graphicsView_6->setScene(bright_histogram);
 
                     QObject::connect(horizontalSlider, SIGNAL(valueChanged(int)), label, SLOT(setNum(int)));
                     QObject::connect(horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(SetNumThreads(int)));
@@ -245,6 +244,7 @@ public:
         }
 	
 
+        /* Calculates, in parallel, the histogram for the image. */
         float CalculateHistogram(){
             QElapsedTimer time_measurer;
 
@@ -277,6 +277,7 @@ public:
             return time_measurer.elapsed()/1000.0;
         }
 
+        /* Displays the histograms on the bottom of the window. */
         void DisplayHistogram(int histograma[4][256]){
             QFile input1("input1");
             QFile input2("input2");
@@ -306,13 +307,13 @@ public:
                   QImage verde("verde.png");
                   QImage azul("azul.png");
                   QImage brilho("brilho.png");
-                  QGraphicsPixmapItem* hvm = histograma_vermelho->addPixmap(QPixmap::fromImage(vermelho).scaledToWidth(HISTOGRAMA_WIDTH));
+                  QGraphicsPixmapItem* hvm = red_histogram->addPixmap(QPixmap::fromImage(vermelho).scaledToWidth(HISTOGRAMA_WIDTH));
                   hvm->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
-                  QGraphicsPixmapItem* hvd = histograma_verde->addPixmap(QPixmap::fromImage(verde).scaledToWidth(HISTOGRAMA_WIDTH));
+                  QGraphicsPixmapItem* hvd = green_histogram->addPixmap(QPixmap::fromImage(verde).scaledToWidth(HISTOGRAMA_WIDTH));
                   hvd->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
-                  QGraphicsPixmapItem* ha = histograma_azul->addPixmap(QPixmap::fromImage(azul).scaledToWidth(HISTOGRAMA_WIDTH));
+                  QGraphicsPixmapItem* ha = blue_histogram->addPixmap(QPixmap::fromImage(azul).scaledToWidth(HISTOGRAMA_WIDTH));
                   ha->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
-                  QGraphicsPixmapItem* hb = histograma_brilho->addPixmap(QPixmap::fromImage(brilho).scaledToWidth(HISTOGRAMA_WIDTH));
+                  QGraphicsPixmapItem* hb = bright_histogram->addPixmap(QPixmap::fromImage(brilho).scaledToWidth(HISTOGRAMA_WIDTH));
                   hb->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
 
              }
@@ -338,7 +339,7 @@ protected slots:
 
                  float one_core_histogram_time=0,x_core_histogram_time=0;
 
-                 /* Generates histogram speedup */
+                 /* Generates speedup histogram*/
                  out1<<"#Num_core\tideal_speedup\tarchieved_speedup\ttime(s)" << endl;
                  for(int i=1;i<=8;i++){
                      omp_set_num_threads(i);
@@ -552,10 +553,10 @@ private:
        QImage imagem_ini;
        QGraphicsScene *imagem_inicial;
        QGraphicsScene *imagem_final;
-       QGraphicsScene *histograma_vermelho;
-       QGraphicsScene *histograma_verde;
-       QGraphicsScene *histograma_azul;
-       QGraphicsScene *histograma_brilho;
+       QGraphicsScene *red_histogram;
+       QGraphicsScene *green_histogram;
+       QGraphicsScene *blue_histogram;
+       QGraphicsScene *bright_histogram;
 
 
        int histogram_matrix[4][256];
