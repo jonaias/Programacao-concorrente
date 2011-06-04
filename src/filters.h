@@ -2,6 +2,18 @@
 #define FILTERS_H_
 #include <stdlib.h>
 
+void colorCorrection(int histogram[256], int transform[256]){
+
+    int i;
+    int cdf[256];
+
+    cdf[0] = histogram[0];
+
+    for (i = 1; i < 256; i++) cdf[i] = cdf[i - 1] + histogram[i];
+    for(i = 0; i < 256; i++) transform[i] = (cdf[i]*256)/cdf[255];
+
+}
+
 void equalization(int histogram[256], int transform[256], int m, int n){
 
         int i;
