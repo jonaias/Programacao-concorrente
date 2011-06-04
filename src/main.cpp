@@ -4,8 +4,8 @@
 #include <QtCore>
 #include "filters.h"
 
-#define IMAGENS_WIDTH 300
-#define HISTOGRAMA_WIDTH 350
+#define IMAGES_WIDTH 300
+#define HISTOGRAM_WIDTH 350
 
 class MainForm : public QMainWindow
 {
@@ -30,8 +30,6 @@ public:
                     graphicsView->setObjectName(QString::fromUtf8("graphicsView"));
 
                     horizontalLayout->addWidget(graphicsView);
-
-                    //horizontalLayout_3->addWidget(groupBox_2);
 
                     groupBox_2 = new QGroupBox(centralwidget);
                     groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
@@ -235,10 +233,12 @@ public:
 
 	}
 
+        /* Clears all histograms. */
         void ClearHistograms(int histogram[4][256]){
             memset(histogram,0,4*256*sizeof(int));
         }
 
+        /* Clears all transformations. */
         void ClearTransforms(int transform[3][256]){
             memset(transform,0,3*256*sizeof(int));
         }
@@ -264,6 +264,7 @@ public:
             return time_measurer.elapsed()/1000.0;
         }
 
+        /* Calculates the adjustments that are to be applied. */
         float CalculateAdjust(){
             QElapsedTimer time_measurer;
 
@@ -307,14 +308,14 @@ public:
                   QImage verde("verde.png");
                   QImage azul("azul.png");
                   QImage brilho("brilho.png");
-                  QGraphicsPixmapItem* hvm = red_histogram->addPixmap(QPixmap::fromImage(vermelho).scaledToWidth(HISTOGRAMA_WIDTH));
-                  hvm->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
-                  QGraphicsPixmapItem* hvd = green_histogram->addPixmap(QPixmap::fromImage(verde).scaledToWidth(HISTOGRAMA_WIDTH));
-                  hvd->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
-                  QGraphicsPixmapItem* ha = blue_histogram->addPixmap(QPixmap::fromImage(azul).scaledToWidth(HISTOGRAMA_WIDTH));
-                  ha->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
-                  QGraphicsPixmapItem* hb = bright_histogram->addPixmap(QPixmap::fromImage(brilho).scaledToWidth(HISTOGRAMA_WIDTH));
-                  hb->setPos(qrand()*HISTOGRAMA_WIDTH/RAND_MAX,qrand()*HISTOGRAMA_WIDTH/RAND_MAX);
+                  QGraphicsPixmapItem* hvm = red_histogram->addPixmap(QPixmap::fromImage(vermelho).scaledToWidth(HISTOGRAM_WIDTH));
+                  hvm->setPos(qrand()*HISTOGRAM_WIDTH/RAND_MAX,qrand()*HISTOGRAM_WIDTH/RAND_MAX);
+                  QGraphicsPixmapItem* hvd = green_histogram->addPixmap(QPixmap::fromImage(verde).scaledToWidth(HISTOGRAM_WIDTH));
+                  hvd->setPos(qrand()*HISTOGRAM_WIDTH/RAND_MAX,qrand()*HISTOGRAM_WIDTH/RAND_MAX);
+                  QGraphicsPixmapItem* ha = blue_histogram->addPixmap(QPixmap::fromImage(azul).scaledToWidth(HISTOGRAM_WIDTH));
+                  ha->setPos(qrand()*HISTOGRAM_WIDTH/RAND_MAX,qrand()*HISTOGRAM_WIDTH/RAND_MAX);
+                  QGraphicsPixmapItem* hb = bright_histogram->addPixmap(QPixmap::fromImage(brilho).scaledToWidth(HISTOGRAM_WIDTH));
+                  hb->setPos(qrand()*HISTOGRAM_WIDTH/RAND_MAX,qrand()*HISTOGRAM_WIDTH/RAND_MAX);
 
              }
              else{
@@ -326,6 +327,7 @@ public:
 
 protected slots:
 
+        /* Generates speedup graphs. */
         void GenerateSpeedup(){
 
             loadButton->click();
@@ -400,6 +402,8 @@ protected slots:
              }
         }
 
+        /* Image adjustments. */
+
         void correctRed(){
             int i;
             colorCorrection(histogram_matrix[0], transformMatrix[0]);
@@ -444,14 +448,15 @@ protected slots:
             omp_set_num_threads(num_threads);
         }
   
+        /* Loads an image from a file specified by the user. */
 	void LoadImage()
 	{
 		filename = QFileDialog::getOpenFileName(0, "Open Image", "", "All files (*.*)");
                 imagem_ini = QImage(filename);
 		
                 if (!imagem_ini.isNull()) {
-                    QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
-                    pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
+                    QGraphicsPixmapItem* pi = imagem_inicial->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGES_WIDTH));
+                    pi->setPos(qrand()*IMAGES_WIDTH/RAND_MAX,qrand()*IMAGES_WIDTH/RAND_MAX);
                     loadButton->setEnabled(false);
                     loadButton->setText("Image loaded");
                     calculateButton->setEnabled(true);
@@ -463,6 +468,7 @@ protected slots:
                 }
 	}
 	
+        /* Generates histograms to be displayed at the bottom of the window. */
         void GenerateHistogram(){
                 float time_elapsed;
                 QString buffer;
@@ -488,6 +494,7 @@ protected slots:
         }
 
 
+        /* Displays the adjusted image on the right side of the window. */
         void GenerateImage()
 	{
             float time_elapsed;
@@ -502,8 +509,8 @@ protected slots:
 
             time_elapsed = CalculateAdjust();
 
-            QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGENS_WIDTH));
-            pi->setPos(qrand()*IMAGENS_WIDTH/RAND_MAX,qrand()*IMAGENS_WIDTH/RAND_MAX);
+            QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGES_WIDTH));
+            pi->setPos(qrand()*IMAGES_WIDTH/RAND_MAX,qrand()*IMAGES_WIDTH/RAND_MAX);
 
             statusbar->showMessage("Time to calculate histogram with "+ QString().setNum(omp_get_max_threads()) +" processors was " + QString().setNum(time_elapsed,'f',3) + "s");
 
