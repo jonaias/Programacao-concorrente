@@ -512,6 +512,8 @@ protected slots:
             QGraphicsPixmapItem* pi = imagem_final->addPixmap(QPixmap::fromImage(imagem_ini).scaledToWidth(IMAGES_WIDTH));
             pi->setPos(qrand()*IMAGES_WIDTH/RAND_MAX,qrand()*IMAGES_WIDTH/RAND_MAX);
 
+            imagem_ini.save("output.jpeg",0,100);
+
             statusbar->showMessage("Time to calculate histogram with "+ QString().setNum(omp_get_max_threads()) +" processors was " + QString().setNum(time_elapsed,'f',3) + "s");
 
             DisplayHistogram(histogram_matrix);
